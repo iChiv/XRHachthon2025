@@ -48,6 +48,16 @@ public class BoxCollector : MonoBehaviour
     public float newBoxDistance = 2f;   // 新箱子出现在玩家前方的距离
 
     private static GameObject lastBoxPrefab = null; // 静态变量，跨实例追踪上一个箱子
+    
+    [Header("音效接口（可选）")]
+    public AudioSource boxAudioSource;  // 箱子音效源
+    public AudioClip collectSound;      // 收集毛球音效
+    public AudioClip explosionSound;    // 爆炸音效
+    public AudioClip rewardSound;       // 奖励合成音效
+    
+    [Header("特效接口（可选）")]
+    public GameObject collectSuccessEffect; // 收集成功特效
+    public GameObject rewardEffect;         // 奖励合成特效
 
 
     void Start()
@@ -111,6 +121,18 @@ public class BoxCollector : MonoBehaviour
                 return;
             }
             collectedCounts[lockedFurType]++;
+            
+            // 播放收集成功音效（如果有的话）
+            if (boxAudioSource != null && collectSound != null)
+                boxAudioSource.PlayOneShot(collectSound);
+            
+            // 播放收集成功特效（如果有的话）
+            if (collectSuccessEffect != null)
+            {
+                GameObject effect = Instantiate(collectSuccessEffect, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
+            
             if (collectedCounts[lockedFurType] > requirements[0].requiredCount)
             {
                 Debug.Log("收集数量超出需求，箱子爆炸！");
@@ -158,6 +180,18 @@ public class BoxCollector : MonoBehaviour
         }
 
         collectedCounts[furType]++;
+        
+        // 播放收集成功音效（如果有的话）
+        if (boxAudioSource != null && collectSound != null)
+            boxAudioSource.PlayOneShot(collectSound);
+        
+        // 播放收集成功特效（如果有的话）
+        if (collectSuccessEffect != null)
+        {
+            GameObject effect = Instantiate(collectSuccessEffect, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+            Destroy(effect, 2f);
+        }
+        
         if (collectedCounts[furType] > requirements.Find(r => r.furType == furType).requiredCount)
         {
             Debug.Log("收集数量超出需求，箱子爆炸！");
@@ -221,6 +255,17 @@ public class BoxCollector : MonoBehaviour
 
     void OnAllRequirementMet()
     {
+        // 播放奖励合成音效（如果有的话）
+        if (boxAudioSource != null && rewardSound != null)
+            boxAudioSource.PlayOneShot(rewardSound);
+        
+        // 播放奖励合成特效（如果有的话）
+        if (rewardEffect != null)
+        {
+            GameObject effect = Instantiate(rewardEffect, transform.position + Vector3.up * 1f, Quaternion.identity);
+            Destroy(effect, 3f);
+        }
+        
         // 1. 播放特效
         if (explosionEffectPrefab != null)
         {
@@ -274,6 +319,10 @@ public class BoxCollector : MonoBehaviour
     }
     void Explode()
     {
+        // 播放爆炸音效（如果有的话）
+        if (boxAudioSource != null && explosionSound != null)
+            boxAudioSource.PlayOneShot(explosionSound);
+        
         // 1. 播放爆炸特效
         if (explosionEffectPrefab != null)
         {

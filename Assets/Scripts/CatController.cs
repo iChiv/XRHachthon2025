@@ -20,6 +20,17 @@ public class CatController : MonoBehaviour
     public float runAwayDistance = 5f;            // 逃跑距离
     public float runAwaySpeed = 3f;               // 逃跑速度
     public GameObject furballSpawnEffectPrefab; // 毛球生成特效
+    
+    [Header("音效接口（可选）")]
+    public AudioSource catAudioSource;            // 猫的音效源
+    public AudioClip meowSound;                   // 猫叫音效
+    public AudioClip furballSound;                // 生成毛球音效
+    public AudioClip runawaySound;                // 逃跑音效
+    
+    [Header("特效接口（可选）")]
+    public GameObject touchEffect;                // 被触摸时的特效
+    public GameObject runAwayEffect;              // 逃跑时的特效
+    public GameObject caughtEffect;               // 被抓住时的特效
 
 
     private float accumulatedDistance = 0f;
@@ -59,6 +70,17 @@ public class CatController : MonoBehaviour
             isTouchingPlayer = true;
             lastPlayerPosition = other.transform.position;
             accumulatedDistance = 0f;
+            
+            // 播放猫叫音效（如果有的话）
+            if (catAudioSource != null && meowSound != null)
+                catAudioSource.PlayOneShot(meowSound);
+            
+            // 播放被触摸特效（如果有的话）
+            if (touchEffect != null)
+            {
+                GameObject effect = Instantiate(touchEffect, transform.position + Vector3.up * 0.3f, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
         }
     }
 
@@ -104,10 +126,14 @@ public class CatController : MonoBehaviour
 
         Vector3 spawnPos = transform.position + Vector3.up * 0.5f;
 
+        // 播放毛球生成音效（如果有的话）
+        if (catAudioSource != null && furballSound != null)
+            catAudioSource.PlayOneShot(furballSound);
+
         if (furballSpawnEffectPrefab != null)
         {
             GameObject effect = Instantiate(furballSpawnEffectPrefab, spawnPos, Quaternion.identity);
-            Destroy(effect, 1f); // 2秒后销毁特效对象（根据特效时长调整）
+            Destroy(effect, 1f); // 1秒后销毁特效对象（根据特效时长调整）
         }
 
         Instantiate(furballPrefabs[randomIndex], transform.position + Vector3.up * 0.5f, Quaternion.identity);
@@ -126,6 +152,18 @@ public class CatController : MonoBehaviour
 
         if (animator != null)
             animator.SetTrigger("runaway");
+
+        // 播放逃跑音效（如果有的话）
+        if (catAudioSource != null && runawaySound != null)
+            catAudioSource.PlayOneShot(runawaySound);
+        
+        // 播放逃跑特效（如果有的话）
+        if (runAwayEffect != null)
+        {
+            GameObject effect = Instantiate(runAwayEffect, transform.position, Quaternion.identity);
+            effect.transform.SetParent(transform); // 跟随猫移动
+            Destroy(effect, 3f);
+        }
 
         // 以远离玩家的方向逃跑
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -216,6 +254,14 @@ public class CatController : MonoBehaviour
         isCaught = true;
         if (animator != null)
             animator.SetBool("isCaught", true);
+        
+        // 播放被抓住特效（如果有的话）
+        if (caughtEffect != null)
+        {
+            GameObject effect = Instantiate(caughtEffect, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+            Destroy(effect, 2f);
+        }
+        
         Debug.Log("猫被抓住了！(Meta SDK WhenSelect)");
     }
     

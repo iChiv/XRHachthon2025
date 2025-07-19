@@ -13,6 +13,13 @@ public class Furball : MonoBehaviour
     public float collectDistance = 1.0f;
     public GameObject collectEffectPrefab;
     public float fadeDuration = 0.3f;
+    
+    [Header("音效接口（可选）")]
+    public AudioSource furballAudioSource;  // 毛球音效源
+    public AudioClip collectSound;          // 收集音效
+    
+    [Header("特效接口（可选）")]
+    public GameObject fadeEffect;           // 消失特效
 
     private bool isCollected = false;
     private Tween currentTween;
@@ -56,6 +63,13 @@ public class Furball : MonoBehaviour
 
     void FadeAndDestroy()
     {
+        // 播放消失特效（如果有的话）
+        if (fadeEffect != null)
+        {
+            GameObject effect = Instantiate(fadeEffect, transform.position, Quaternion.identity);
+            Destroy(effect, 2f);
+        }
+        
         Renderer r = GetComponentInChildren<Renderer>();
         if (r != null && r.material.HasProperty("_Color"))
         {
@@ -77,6 +91,11 @@ public class Furball : MonoBehaviour
     void Collect(GameObject box)
     {
         isCollected = true;
+        
+        // 播放收集音效（如果有的话）
+        if (furballAudioSource != null && collectSound != null)
+            furballAudioSource.PlayOneShot(collectSound);
+        
         if (collectEffectPrefab != null)
         {
             Instantiate(collectEffectPrefab, transform.position, Quaternion.identity);

@@ -40,6 +40,17 @@ public class GameManager : MonoBehaviour
     public int pandaRewardScore = 15;       // 熊猫合成得分
     public int dogRewardScore = 20;         // 小狗合成得分
     
+    [Header("音效接口（可选）")]
+    public AudioSource gameAudioSource;     // 游戏音效源
+    public AudioClip gameStartSound;        // 游戏开始音效
+    public AudioClip gameEndSound;          // 游戏结束音效
+    public AudioClip scoreSound;            // 计分音效
+    
+    [Header("特效接口（可选）")]
+    public GameObject gameStartEffect;      // 游戏开始特效
+    public GameObject gameEndEffect;        // 游戏结束特效
+    public GameObject scoreEffect;          // 计分特效
+    
     // 游戏状态
     public enum GameState { Ready, Playing, Finished }
     public GameState currentState = GameState.Ready;
@@ -122,6 +133,18 @@ public class GameManager : MonoBehaviour
         if (currentState != GameState.Ready) return;
         
         currentState = GameState.Playing;
+        
+        // 播放游戏开始音效（如果有的话）
+        if (gameAudioSource != null && gameStartSound != null)
+            gameAudioSource.PlayOneShot(gameStartSound);
+        
+        // 播放游戏开始特效（如果有的话）
+        if (gameStartEffect != null)
+        {
+            GameObject effect = Instantiate(gameStartEffect, transform.position, Quaternion.identity);
+            Destroy(effect, 3f);
+        }
+        
         Debug.Log("游戏开始！");
         UpdateUI();
     }
@@ -131,6 +154,18 @@ public class GameManager : MonoBehaviour
         if (currentState != GameState.Playing) return;
         
         currentState = GameState.Finished;
+        
+        // 播放游戏结束音效（如果有的话）
+        if (gameAudioSource != null && gameEndSound != null)
+            gameAudioSource.PlayOneShot(gameEndSound);
+        
+        // 播放游戏结束特效（如果有的话）
+        if (gameEndEffect != null)
+        {
+            GameObject effect = Instantiate(gameEndEffect, transform.position, Quaternion.identity);
+            Destroy(effect, 5f);
+        }
+        
         Debug.Log($"游戏结束！最终分数: {currentScore}");
         
         // 显示最终分数
@@ -198,7 +233,17 @@ public class GameManager : MonoBehaviour
     {
         currentScore += points;
         
-        // 可以在这里添加分数特效
+        // 播放计分音效（如果有的话）
+        if (gameAudioSource != null && scoreSound != null)
+            gameAudioSource.PlayOneShot(scoreSound);
+        
+        // 播放计分特效（如果有的话）
+        if (scoreEffect != null)
+        {
+            GameObject effect = Instantiate(scoreEffect, transform.position, Quaternion.identity);
+            Destroy(effect, 2f);
+        }
+        
         Debug.Log($"获得 {points} 分！当前总分: {currentScore}");
     }
     

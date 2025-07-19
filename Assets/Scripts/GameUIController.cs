@@ -23,10 +23,6 @@ public class GameUIController : MonoBehaviour
     [Header("VR UI Control")]
     public VRUIFollower uiFollower;
     
-    [Header("UI Buttons (Optional)")]
-    public Button startGameButton;      // 可选：开始游戏按钮
-    public Button restartGameButton;    // 可选：重新开始按钮
-    
     private GameManager gameManager;
     private CanvasGroup canvasGroup;
     
@@ -67,23 +63,6 @@ public class GameUIController : MonoBehaviour
             scoreText.color = scoreColor;
             scoreText.fontSize = fontSize;
             scoreText.text = "Score: 0";
-        }
-        
-        // 设置UI按钮事件（用于手部追踪点击）
-        if (startGameButton != null)
-        {
-            startGameButton.onClick.AddListener(() => {
-                if (gameManager != null && gameManager.currentState == GameManager.GameState.Ready)
-                    gameManager.StartGame();
-            });
-        }
-        
-        if (restartGameButton != null)
-        {
-            restartGameButton.onClick.AddListener(() => {
-                if (gameManager != null && gameManager.currentState == GameManager.GameState.Finished)
-                    RestartGame();
-            });
         }
         
         // 根据游戏状态显示对应panel

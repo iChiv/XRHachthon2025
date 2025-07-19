@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - FxTemporaire
+  - Cat
+  - playerrig
+  - Ground
   layers:
   - Default
   - TransparentFX
@@ -36,7 +40,7 @@ TagManager:
   - 
   - 
   - XR Simulation
-  - 
+  - OVROverlayCanvas Rendering
   m_SortingLayers:
   - name: Default
     uniqueID: 0

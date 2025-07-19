@@ -8,12 +8,12 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Overlay UI
   - Water
   - UI
   - Spawner Contact
   - Placeable Surface
-  - 
+  - HiddenFootprints
   - 
   - 
   - 

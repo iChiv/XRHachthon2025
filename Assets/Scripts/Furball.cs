@@ -36,19 +36,21 @@ public class Furball : MonoBehaviour
             });
     }
 
-    void Update()
+    void OnTriggerEnter(Collider other)
     {
-        if (!isCollected)
+        if (!isCollected && other.CompareTag("Box"))
         {
-            GameObject box = GameObject.FindGameObjectWithTag("Box");
-            if (box != null)
-            {
-                float dist = Vector3.Distance(transform.position, box.transform.position);
-                if (dist <= collectDistance)
-                {
-                    Collect(box);
-                }
-            }
+            Collect(other.gameObject);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // 清理DOTween资源，避免内存泄漏
+        if (currentTween != null)
+        {
+            currentTween.Kill();
+            currentTween = null;
         }
     }
 
@@ -58,10 +60,13 @@ public class Furball : MonoBehaviour
         if (r != null && r.material.HasProperty("_Color"))
         {
             Color c = r.material.color;
-            DOTween.To(() => c.a, x => {
+            var fadeTween = DOTween.To(() => c.a, x => {
                 c.a = x;
                 r.material.color = c;
             }, 0, fadeDuration).OnComplete(() => Destroy(gameObject));
+            
+            // 确保fade动画也能被正确管理
+            currentTween = fadeTween;
         }
         else
         {
@@ -76,6 +81,13 @@ public class Furball : MonoBehaviour
         {
             Instantiate(collectEffectPrefab, transform.position, Quaternion.identity);
         }
+        
+        // 通知GameManager毛球被收集（计分系统）
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnFurballCollected();
+        }
+        
         // 通知Box收集，并传递furType和furballPrefab
         BoxCollector boxCollector = box.GetComponent<BoxCollector>();
         if (boxCollector != null)

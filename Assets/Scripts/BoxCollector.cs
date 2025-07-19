@@ -52,15 +52,46 @@ public class BoxCollector : MonoBehaviour
 
     void Start()
     {
+        // 标准化并初始化需求字典
         foreach (var req in requirements)
         {
-            collectedCounts[req.furType] = 0;
+            string normalizedType = NormalizeFurType(req.furType);
+            collectedCounts[normalizedType] = 0;
+            // 更新requirements中的furType为标准化版本
+            req.furType = normalizedType;
         }
+        
+        // 初始化颜色奖励字典
+        colorRewardDict.Clear();
+        foreach (var colorReward in colorRewards)
+        {
+            string normalizedType = NormalizeFurType(colorReward.furType);
+            if (!string.IsNullOrEmpty(normalizedType) && colorReward.rewardPrefab != null)
+            {
+                colorRewardDict[normalizedType] = colorReward.rewardPrefab;
+                // 更新colorReward中的furType为标准化版本
+                colorReward.furType = normalizedType;
+            }
+        }
+        
         RefreshTexts();
+    }
+
+    // 标准化颜色名称，避免大小写不一致问题
+    private string NormalizeFurType(string furType)
+    {
+        if (string.IsNullOrEmpty(furType))
+            return furType;
+        
+        // 统一转换为首字母大写格式
+        return char.ToUpper(furType[0]) + furType.Substring(1).ToLower();
     }
 
     public void CollectFurball(string furType, GameObject furballPrefab)
     {
+        // 标准化输入的毛球类型
+        furType = NormalizeFurType(furType);
+        
         // 判断是否同色箱（只配置一个需求，furType为空或"Any"）
         bool isMonoColorBox = (requirements.Count == 1 && (string.IsNullOrEmpty(requirements[0].furType) || requirements[0].furType == "Any"));
 
@@ -167,6 +198,13 @@ public class BoxCollector : MonoBehaviour
     IEnumerator GenerateAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
+        
+        // 检查游戏状态，防止场景重新加载时生成箱子
+        if (GameManager.Instance == null || GameManager.Instance.currentState != GameManager.GameState.Playing)
+        {
+            yield break; // 如果游戏不在进行中，停止生成
+        }
+        
         GenerateNewBox();
         Destroy(gameObject);
     }
@@ -195,7 +233,13 @@ public class BoxCollector : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(lockedFurType) && colorRewardDict.ContainsKey(lockedFurType))
             {
-                Instantiate(colorRewardDict[lockedFurType], transform.position, Quaternion.identity);
+                GameObject reward = Instantiate(colorRewardDict[lockedFurType], transform.position, Quaternion.identity);
+                
+                // 通知GameManager获得分数（合成奖励）
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.OnRewardSynthesized(reward.name);
+                }
             }
             else
             {
@@ -206,9 +250,21 @@ public class BoxCollector : MonoBehaviour
         {
             if (goalPrefab != null)
             {
-                Instantiate(goalPrefab, transform.position, Quaternion.identity);
-            }
-        }
+                GameObject reward = Instantiate(goalPrefab, transform.position, Quaternion.identity);
+                
+                // 通知GameManager获得分数（合成多色奖励）
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.OnRewardSynthesized(reward.name);
+                        }
+    }
+    
+    void OnDestroy()
+    {
+        // 停止所有协程，防止内存泄漏
+        StopAllCoroutines();
+    }
+}
 
         // 3. 箱子消失
         gameObject.GetComponent<MeshRenderer>().enabled = false;
@@ -265,8 +321,8 @@ public class BoxCollector : MonoBehaviour
         GameObject newBox = Instantiate(chosenPrefab, spawnPos, Quaternion.identity);
         newBox.SetActive(true);
 
-        BoxCollector newBoxCollector = newBox.GetComponent<BoxCollector>();
-        if (newBoxCollector != null && newBoxCollector.furballContainer != null)
+        // 清理当前箱子的毛球（如果有的话）
+        if (furballContainer != null)
         {
             for (int i = furballContainer.childCount - 1; i >= 0; i--)
             {
@@ -278,7 +334,12 @@ public class BoxCollector : MonoBehaviour
             }
         }
 
-        RefreshTexts();
+        // 在新箱子上刷新文本，而不是在即将销毁的当前箱子上
+        BoxCollector newBoxCollector = newBox.GetComponent<BoxCollector>();
+        if (newBoxCollector != null)
+        {
+            newBoxCollector.RefreshTexts();
+        }
     }
     
     void RefreshTexts()
@@ -286,9 +347,10 @@ public class BoxCollector : MonoBehaviour
         // 单色箱子
         if (requirements.Count == 1 && (string.IsNullOrEmpty(requirements[0].furType) || requirements[0].furType == "Any"))
         {
-            if (!string.IsNullOrEmpty(lockedFurType))
+            if (!string.IsNullOrEmpty(lockedFurType) && collectedCounts.ContainsKey(lockedFurType))
             {
                 int remain = requirements[0].requiredCount - collectedCounts[lockedFurType];
+                remain = Mathf.Max(0, remain); // 确保不显示负数
                 if (monoText != null)
                     monoText.text = "X" + remain;
             }
@@ -302,10 +364,12 @@ public class BoxCollector : MonoBehaviour
         {
             foreach (var ft in furballTexts)
             {
-                var req = requirements.Find(r => r.furType == ft.furType);
+                var req = requirements.Find(r => r.furType.Equals(ft.furType, System.StringComparison.OrdinalIgnoreCase));
                 if (req != null && ft.text != null)
                 {
-                    int remain = req.requiredCount - collectedCounts[ft.furType];
+                    int currentCount = collectedCounts.ContainsKey(req.furType) ? collectedCounts[req.furType] : 0;
+                    int remain = req.requiredCount - currentCount;
+                    remain = Mathf.Max(0, remain); // 确保不显示负数
                     ft.text.text = "X" + remain;
                 }
             }

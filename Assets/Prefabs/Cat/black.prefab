@@ -1896,7 +1896,7 @@ MonoBehaviour:
   waitTimeMax: 4
   roamRadius: 10
   roamCenter: {fileID: 0}
-  requiredFrictionDistance: 0.5
+  requiredFrictionDistance: 1.5
   furballPrefabs:
   - {fileID: 7920412296974716890, guid: 678b8c8de62eef046b40c8bd39837c9b, type: 3}
   - {fileID: 5712792660585954857, guid: ba0546c7ec5ad91488ba52e284dc5d32, type: 3}

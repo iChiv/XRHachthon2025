@@ -15,7 +15,7 @@ public class CatController : MonoBehaviour
     private float waitTimer = 0f;
 
     [Header("撸猫参数")]
-    public float requiredFrictionDistance = 2.0f; // 需要摩擦的距离
+    public float requiredFrictionDistance = 1.0f; // 需要摩擦的距离
     public GameObject[] furballPrefabs;           // 毛球预制体数组
     public float runAwayDistance = 5f;            // 逃跑距离
     public float runAwaySpeed = 3f;               // 逃跑速度
@@ -209,13 +209,17 @@ public class CatController : MonoBehaviour
         roamTarget.y = 0.1f; // 地面高度可调整
     }
     
-    public void OnGrabbed()
+    // Meta SDK 的抓取事件接口方法
+    // 这些方法会被Meta Interaction SDK自动调用
+    public void WhenSelect()
     {
         isCaught = true;
         if (animator != null)
             animator.SetBool("isCaught", true);
+        Debug.Log("猫被抓住了！(Meta SDK WhenSelect)");
     }
-    public void OnReleased()
+    
+    public void WhenUnselect()
     {
         isCaught = false;
         if (animator != null)
@@ -224,6 +228,29 @@ public class CatController : MonoBehaviour
         Vector3 pos = transform.position;
         pos.y = 0.1f; // 如果你有地形可用Raycast获取地形高度
         transform.position = pos;
+        Debug.Log("猫被释放了！(Meta SDK WhenUnselect)");
+    }
+
+    // 备用方法名 - Meta SDK可能使用这些
+    public void OnGrabBegin()
+    {
+        WhenSelect();
+    }
+    
+    public void OnGrabEnd()
+    {
+        WhenUnselect();
+    }
+    
+    // 另一种可能的接口
+    public void OnSelectEntered()
+    {
+        WhenSelect();
+    }
+    
+    public void OnSelectExited()
+    {
+        WhenUnselect();
     }
 
 

@@ -293,7 +293,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2.793, y: 1.7727005, z: 0.19539616}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3070959256134223088}
@@ -307,7 +307,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7920412296974716890}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -436281336419260249, guid: 814c89c396d15964d8a32b1a521f0134, type: 3}
 --- !u!23 &549960700936728961
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -331,7 +331,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 5559263773472392200, guid: 714a27c3372b8074d8370e2bc0cecf56, type: 3}
+  - {fileID: 2100000, guid: a852c72c37f71f3429cd6c51316cc092, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -372,7 +372,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Radius: 0.1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &5921624443775986675
 MonoBehaviour:
@@ -387,12 +387,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   furType: Black
+  furballPrefab: {fileID: 5033589716635699964, guid: 880dd797eea800d419d9d5ae8d1f1948, type: 3}
   upwardHeight: 1.5
   upwardDuration: 0.4
-  dropDuration: 5
-  horizontalRandomRange: 0.3
+  dropDuration: 10
+  horizontalRandomRange: 0.5
   groundY: 0.1
-  collectDistance: 1.2
+  collectDistance: 0.5
   collectEffectPrefab: {fileID: 100000, guid: a381ded06c204a54e909a18e574f7436, type: 3}
   fadeDuration: 0.3
 --- !u!54 &1821260197240674498

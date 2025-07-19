@@ -8,6 +8,7 @@ TagManager:
   - Cat
   - playerrig
   - Ground
+  - Box
   layers:
   - Default
   - TransparentFX

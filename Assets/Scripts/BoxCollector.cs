@@ -86,9 +86,66 @@ public class BoxCollector : MonoBehaviour
         
         RefreshTexts();
     }
+    
+    /// <summary>
+    /// 重置箱子到初始状态（用于生成新箱子时）
+    /// </summary>
+    public void ResetToInitialState()
+    {
+        // 1. 确保MeshRenderer启用
+        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer != null)
+        {
+            meshRenderer.enabled = true;
+        }
+        
+        // 2. 清理毛球容器
+        if (furballContainer != null)
+        {
+            for (int i = furballContainer.childCount - 1; i >= 0; i--)
+            {
+                Transform child = furballContainer.GetChild(i);
+                if (child != null)
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+        
+        // 3. 重置收集状态
+        collectedCounts.Clear();
+        lockedFurType = null;
+        
+        // 4. 重新初始化需求字典
+        foreach (var req in requirements)
+        {
+            string normalizedType = NormalizeFurType(req.furType);
+            collectedCounts[normalizedType] = 0;
+            // 更新requirements中的furType为标准化版本
+            req.furType = normalizedType;
+        }
+        
+        // 5. 重新初始化颜色奖励字典
+        colorRewardDict.Clear();
+        foreach (var colorReward in colorRewards)
+        {
+            string normalizedType = NormalizeFurType(colorReward.furType);
+            if (!string.IsNullOrEmpty(normalizedType) && colorReward.rewardPrefab != null)
+            {
+                colorRewardDict[normalizedType] = colorReward.rewardPrefab;
+                // 更新colorReward中的furType为标准化版本
+                colorReward.furType = normalizedType;
+            }
+        }
+        
+        // 6. 刷新文本显示
+        RefreshTexts();
+        
+        Debug.Log($"箱子已重置到初始状态: {gameObject.name}");
+    }
 
     // 标准化颜色名称，避免大小写不一致问题
-    private string NormalizeFurType(string furType)
+    public string NormalizeFurType(string furType)
     {
         if (string.IsNullOrEmpty(furType))
             return furType;
@@ -301,21 +358,21 @@ public class BoxCollector : MonoBehaviour
                 if (GameManager.Instance != null)
                 {
                     GameManager.Instance.OnRewardSynthesized(reward.name);
-                        }
-    }
-    
-    void OnDestroy()
-    {
-        // 停止所有协程，防止内存泄漏
-        StopAllCoroutines();
-    }
-}
+                }
+            }
+        }
 
         // 3. 箱子消失
         gameObject.GetComponent<MeshRenderer>().enabled = false;
 
         // 4. 在玩家前方生成新箱子
         StartCoroutine(GenerateAfterDelay(1f));
+    }
+    
+    void OnDestroy()
+    {
+        // 停止所有协程，防止内存泄漏
+        StopAllCoroutines();
     }
     void Explode()
     {
@@ -369,8 +426,17 @@ public class BoxCollector : MonoBehaviour
         // 生成新箱子
         GameObject newBox = Instantiate(chosenPrefab, spawnPos, Quaternion.identity);
         newBox.SetActive(true);
+        
+        // ===== 关键修复：确保新箱子是干净的初始状态 =====
+        BoxCollector newBoxCollector = newBox.GetComponent<BoxCollector>();
+        if (newBoxCollector != null)
+        {
+            // 使用专门的重置方法确保箱子状态干净
+            newBoxCollector.ResetToInitialState();
+            Debug.Log($"生成新的干净箱子: {newBox.name}");
+        }
 
-        // 清理当前箱子的毛球（如果有的话）
+        // 清理当前箱子的毛球（即将销毁的箱子）
         if (furballContainer != null)
         {
             for (int i = furballContainer.childCount - 1; i >= 0; i--)
@@ -381,13 +447,6 @@ public class BoxCollector : MonoBehaviour
                 child.SetActive(false); // 先隐藏
                 Destroy(child, 0.1f);   // 延迟销毁
             }
-        }
-
-        // 在新箱子上刷新文本，而不是在即将销毁的当前箱子上
-        BoxCollector newBoxCollector = newBox.GetComponent<BoxCollector>();
-        if (newBoxCollector != null)
-        {
-            newBoxCollector.RefreshTexts();
         }
     }
     

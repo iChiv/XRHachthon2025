@@ -46,6 +46,14 @@ public class GameManager : MonoBehaviour
     public AudioClip gameEndSound;          // 游戏结束音效
     public AudioClip scoreSound;            // 计分音效
     
+    [Header("BGM背景音乐（可选）")]
+    public AudioSource bgmAudioSource;      // BGM音频源
+    public AudioClip menuBGM;               // 菜单背景音乐
+    public AudioClip gameBGM;               // 游戏中背景音乐
+    public AudioClip endBGM;                // 结算背景音乐
+    [Range(0f, 1f)]
+    public float bgmVolume = 0.5f;          // BGM音量
+    
     [Header("特效接口（可选）")]
     public GameObject gameStartEffect;      // 游戏开始特效
     public GameObject gameEndEffect;        // 游戏结束特效
@@ -91,6 +99,9 @@ public class GameManager : MonoBehaviour
         // 设置提交分数按钮事件
         if (submitScoreButton != null)
             submitScoreButton.onClick.AddListener(SubmitScore);
+        
+        // 开始播放菜单BGM
+        PlayBGM(menuBGM);
     }
     
     void InitializeGame()
@@ -104,6 +115,9 @@ public class GameManager : MonoBehaviour
         // 显示游戏UI，隐藏排行榜UI
         if (gameUIController != null) gameUIController.SetVisible(true);
         if (leaderboardUI != null) leaderboardUI.SetActive(false);
+        
+        // 确保回到菜单BGM（用于重新启动游戏时）
+        PlayBGM(menuBGM);
         
         UpdateUI();
     }
@@ -145,6 +159,9 @@ public class GameManager : MonoBehaviour
             Destroy(effect, 3f);
         }
         
+        // 切换到游戏BGM
+        FadeToBGM(gameBGM, 2f);
+        
         Debug.Log("游戏开始！");
         UpdateUI();
     }
@@ -165,6 +182,9 @@ public class GameManager : MonoBehaviour
             GameObject effect = Instantiate(gameEndEffect, transform.position, Quaternion.identity);
             Destroy(effect, 5f);
         }
+        
+        // 切换到结算BGM
+        FadeToBGM(endBGM, 2f);
         
         Debug.Log($"游戏结束！最终分数: {currentScore}");
         
@@ -338,6 +358,97 @@ public class GameManager : MonoBehaviour
     
     // 获取排行榜数据的公共方法
     public List<PlayerScore> GetLeaderboard() => new List<PlayerScore>(leaderboard);
+    
+    // ============ BGM控制方法 ============
+    
+    /// <summary>
+    /// 播放指定的BGM
+    /// </summary>
+    /// <param name="bgmClip">要播放的BGM音频剪辑</param>
+    public void PlayBGM(AudioClip bgmClip)
+    {
+        if (bgmAudioSource == null || bgmClip == null) return;
+        
+        // 如果正在播放相同的BGM，不重复播放
+        if (bgmAudioSource.isPlaying && bgmAudioSource.clip == bgmClip) return;
+        
+        bgmAudioSource.clip = bgmClip;
+        bgmAudioSource.volume = bgmVolume;
+        bgmAudioSource.loop = true;  // BGM循环播放
+        bgmAudioSource.Play();
+        
+        Debug.Log($"开始播放BGM: {bgmClip.name}");
+    }
+    
+    /// <summary>
+    /// 停止BGM播放
+    /// </summary>
+    public void StopBGM()
+    {
+        if (bgmAudioSource != null && bgmAudioSource.isPlaying)
+        {
+            bgmAudioSource.Stop();
+            Debug.Log("停止播放BGM");
+        }
+    }
+    
+    /// <summary>
+    /// 设置BGM音量
+    /// </summary>
+    /// <param name="volume">音量值 (0-1)</param>
+    public void SetBGMVolume(float volume)
+    {
+        bgmVolume = Mathf.Clamp01(volume);
+        if (bgmAudioSource != null)
+        {
+            bgmAudioSource.volume = bgmVolume;
+        }
+    }
+    
+    /// <summary>
+    /// 淡入淡出切换BGM
+    /// </summary>
+    /// <param name="newBGM">新的BGM</param>
+    /// <param name="fadeTime">淡入淡出时间</param>
+    public void FadeToBGM(AudioClip newBGM, float fadeTime = 1f)
+    {
+        if (bgmAudioSource == null || newBGM == null) return;
+        
+        StartCoroutine(FadeBGMCoroutine(newBGM, fadeTime));
+    }
+    
+    private System.Collections.IEnumerator FadeBGMCoroutine(AudioClip newBGM, float fadeTime)
+    {
+        float originalVolume = bgmVolume;
+        
+        // 淡出当前BGM
+        if (bgmAudioSource.isPlaying)
+        {
+            float elapsedTime = 0f;
+            while (elapsedTime < fadeTime / 2f)
+            {
+                bgmAudioSource.volume = Mathf.Lerp(originalVolume, 0f, elapsedTime / (fadeTime / 2f));
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+        }
+        
+        // 切换BGM
+        bgmAudioSource.clip = newBGM;
+        bgmAudioSource.Play();
+        
+        // 淡入新BGM
+        float elapsedTime2 = 0f;
+        while (elapsedTime2 < fadeTime / 2f)
+        {
+            bgmAudioSource.volume = Mathf.Lerp(0f, originalVolume, elapsedTime2 / (fadeTime / 2f));
+            elapsedTime2 += Time.deltaTime;
+            yield return null;
+        }
+        
+        bgmAudioSource.volume = originalVolume;
+        Debug.Log($"淡入淡出切换BGM完成: {newBGM.name}");
+    }
 }
 
 // 用于JSON序列化的辅助类

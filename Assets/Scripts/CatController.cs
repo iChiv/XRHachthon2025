@@ -16,6 +16,8 @@ public class CatController : MonoBehaviour
 
     [Header("撸猫参数")]
     public float requiredFrictionDistance = 1.0f; // 需要摩擦的距离
+    public float speedThreshold = 0.3f;           // 速度阈值（单位/秒，降低难度）
+    public float timeWindow = 3.0f;               // 时间窗口（秒，增加容错时间）
     public GameObject[] furballPrefabs;           // 毛球预制体数组
     public float runAwayDistance = 5f;            // 逃跑距离
     public float runAwaySpeed = 3f;               // 逃跑速度
@@ -36,6 +38,9 @@ public class CatController : MonoBehaviour
     private float accumulatedDistance = 0f;
     private Vector3 lastPlayerPosition;
     private bool isTouchingPlayer = false;
+    private float touchStartTime = 0f;            // 开始接触的时间戳
+    private float totalSpeedAccumulated = 0f;     // 累积速度总和
+    private int speedSamples = 0;                 // 速度采样次数（用于计算平均速度）
     private int furballCount = 0;
     private List<int> usedPrefabIndices = new List<int>();
     private bool isRunningAway = false;
@@ -70,6 +75,9 @@ public class CatController : MonoBehaviour
             isTouchingPlayer = true;
             lastPlayerPosition = other.transform.position;
             accumulatedDistance = 0f;
+            touchStartTime = Time.time;           // 记录开始接触时间
+            totalSpeedAccumulated = 0f;           // 重置累积速度
+            speedSamples = 0;                     // 重置采样次数
             
             // 播放猫叫音效（如果有的话）
             if (catAudioSource != null && meowSound != null)
@@ -90,12 +98,40 @@ public class CatController : MonoBehaviour
         {
             Vector3 currentPlayerPosition = other.transform.position;
             float distance = Vector3.Distance(currentPlayerPosition, lastPlayerPosition);
+            float currentSpeed = distance / Time.fixedDeltaTime;
+            
+            // 累积距离检测（原有逻辑）
             accumulatedDistance += distance;
+            
+            // 累积速度检测（新增，降低难度）
+            totalSpeedAccumulated += currentSpeed;
+            speedSamples++;
+            float averageSpeed = speedSamples > 0 ? totalSpeedAccumulated / speedSamples : 0f;
+            
+            // 时间窗口检测（新增，增加容错）
+            float touchDuration = Time.time - touchStartTime;
+            
             lastPlayerPosition = currentPlayerPosition;
 
-            if (accumulatedDistance >= requiredFrictionDistance)
+            // 多重检测条件（任何一个满足就能生成毛球，降低难度）
+            bool distanceCondition = accumulatedDistance >= requiredFrictionDistance;
+            bool speedCondition = averageSpeed >= speedThreshold && touchDuration >= 0.5f; // 至少摸0.5秒
+            bool timeWindowCondition = touchDuration >= timeWindow && accumulatedDistance >= requiredFrictionDistance * 0.5f; // 时间够长且有基本移动
+            
+            if (distanceCondition || speedCondition || timeWindowCondition)
             {
+                // 调试输出触发条件
+                string triggerReason = "";
+                if (distanceCondition) triggerReason += "距离达标 ";
+                if (speedCondition) triggerReason += "速度达标 ";
+                if (timeWindowCondition) triggerReason += "时间达标 ";
+                Debug.Log($"毛球生成触发: {triggerReason}");
+                
+                // 重置所有检测参数
                 accumulatedDistance = 0f;
+                totalSpeedAccumulated = 0f;
+                speedSamples = 0;
+                touchStartTime = Time.time; // 重新开始计时
                 GenerateFurball();
             }
         }
@@ -107,6 +143,9 @@ public class CatController : MonoBehaviour
         {
             isTouchingPlayer = false;
             accumulatedDistance = 0f;
+            totalSpeedAccumulated = 0f;       // 重置累积速度
+            speedSamples = 0;                 // 重置采样次数
+            touchStartTime = 0f;              // 重置时间
         }
     }
 
